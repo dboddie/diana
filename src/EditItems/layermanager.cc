@@ -29,9 +29,18 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <EditItems/kml.h>
+#include <EditItems/edititembase.h>
+#include <EditItems/editpolyline.h>
+#include <EditItems/editsymbol.h>
+#include <EditItems/edittext.h>
+#include <EditItems/editcomposite.h>
 #include <EditItems/layermanager.h>
 #include <EditItems/layer.h>
 #include <EditItems/layergroup.h>
+
+#define MILOGGER_CATEGORY "diana.LayerManager"
+#include <miLogger/miLogging.h>
 
 namespace EditItems {
 
@@ -179,6 +188,21 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QList<QSharedP
 QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<Layer> &layer, const QString &name)
 {
   return addToNewLayerGroup(QList<QSharedPointer<Layer> >() << layer, name);
+}
+
+QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QFile &file)
+{
+  QString error;
+
+  const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, file.fileName(), &error);
+
+  if (error.isEmpty())
+    addToLayerGroup(layerGroup, layers);
+  else
+    METLIBS_LOG_DEBUG(QString("LayerGroupsPane::mouseClicked: failed to load layer group from %1: %2")
+                      .arg(file.fileName()).arg(error).toStdString());
+
+  return layerGroup;
 }
 
 QSharedPointer<LayerGroup> LayerManager::createNewLayerGroup(const QString &name) const

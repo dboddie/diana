@@ -39,7 +39,6 @@
 #include <EditItems/layergroup.h>
 #include <EditItems/layermanager.h>
 #include <EditItems/drawingstylemanager.h>
-#include <EditItems/timefilesextractor.h>
 #include <diPlotModule.h>
 #include <diLocalSetupParser.h>
 
@@ -207,10 +206,7 @@ bool DrawingManager::parseSetup()
     } else if (items.contains("tseries")) {
       const QString timeSeries = items.value("tseries");
       const QString filePattern = items.value("tsfiles");
-      QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(filePattern);
-      //qDebug() << "time series" << timeSeries << "; timefiles matching pattern" << filePattern << ":";
-      for (int i = 0; i < tfiles.size(); ++i)
-        ; //qDebug() << tfiles.at(i).first.filePath() << " / " << tfiles.at(i).second;
+      drawings_.insert(filePattern);
     }
   }
 
@@ -279,11 +275,40 @@ std::vector<std::string> DrawingManager::getAnnotations() const
   return output;
 }
 
-QSharedPointer<DrawingItemBase> DrawingManager::createItemFromVarMap(const QVariantMap &properties, QString *error)
+DrawingItemBase *DrawingManager::createItem(const QString &type)
 {
-  return QSharedPointer<DrawingItemBase>(
-        createItemFromVarMap_<DrawingItemBase, DrawingItem_PolyLine::PolyLine, DrawingItem_Symbol::Symbol,
-        DrawingItem_Text::Text, DrawingItem_Composite::Composite>(properties, error));
+  DrawingItemBase *item = 0;
+  if (type == "PolyLine") {
+    item = new DrawingItem_PolyLine::PolyLine();
+  } else if (type == "Symbol") {
+    item = new DrawingItem_Symbol::Symbol();
+  } else if (type == "Text") {
+    item = new DrawingItem_Text::Text();
+  } else if (type == "Composite") {
+    item = new DrawingItem_Composite::Composite();
+  }
+  return item;
+}
+
+QSharedPointer<DrawingItemBase> DrawingManager::createItemFromVarMap(const QVariantMap &vmap, QString *error)
+{
+  Q_ASSERT(!vmap.empty());
+  Q_ASSERT(vmap.contains("type"));
+  Q_ASSERT(vmap.value("type").canConvert(QVariant::String));
+
+  QString type = vmap.value("type").toString().split("::").last();
+  DrawingItemBase *item = createItem(type);
+
+  if (item) {
+    item->setProperties(vmap);
+    setFromLatLonPoints(*item, Drawing(item)->getLatLonPoints());
+
+    DrawingItem_Composite::Composite *c = dynamic_cast<DrawingItem_Composite::Composite *>(item);
+    if (c)
+      c->createElements();
+  }
+
+  return QSharedPointer<DrawingItemBase>(item);
 }
 
 void DrawingManager::addItem_(const QSharedPointer<DrawingItemBase> &item)
@@ -296,8 +321,7 @@ bool DrawingManager::loadDrawing(const QString &fileName)
 {
   // parse file and create item layers
   QString error;
-  QList<QSharedPointer<EditItems::Layer> > layers = KML::createFromFile<DrawingItemBase, DrawingItem_PolyLine::PolyLine, DrawingItem_Symbol::Symbol,
-      DrawingItem_Text::Text, DrawingItem_Composite::Composite>(layerMgr_, fileName, &error);
+  QList<QSharedPointer<EditItems::Layer> > layers = KML::createFromFile(layerMgr_, fileName, &error);
 
   if (!error.isEmpty()) {
     METLIBS_LOG_WARN("Failed to create items from file " << fileName.toStdString() << ": " << error.toStdString());

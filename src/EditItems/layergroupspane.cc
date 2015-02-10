@@ -29,16 +29,19 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include "diEditItemManager.h"
+#include <EditItems/kml.h>
+#include <EditItems/edititembase.h>
+#include <EditItems/editpolyline.h>
+#include <EditItems/editsymbol.h>
+#include <EditItems/edittext.h>
+#include <EditItems/editcomposite.h>
 #include <EditItems/layergroupspane.h>
 #include <EditItems/dialogcommon.h>
 #include <EditItems/layer.h>
 #include <EditItems/layergroup.h>
 #include <EditItems/layermanager.h>
-#include <EditItems/kml.h>
-#include <EditItems/editpolyline.h>
-#include <EditItems/editsymbol.h>
-#include <EditItems/edittext.h>
-#include <EditItems/editcomposite.h>
+#include <EditItems/timefilesextractor.h>
 
 #include "fileopen.xpm"
 
@@ -223,23 +226,29 @@ void LayerGroupsPane::mouseClicked(QMouseEvent *event)
   const bool active = !lgWidget->layerGroup()->isActive();
   lgWidget->layerGroup()->setActive(active);
 
-  if (active) {
-    // Only load the contents of a file when the layer group is selected.
-    QString error;
-    QString fileName = lgWidget->layerGroup()->name();
-    const QList<QSharedPointer<Layer> > layers = \
-      KML::createFromFile<EditItemBase, EditItem_PolyLine::PolyLine, EditItem_Symbol::Symbol,
-        EditItem_Text::Text, EditItem_Composite::Composite>(layerMgr_, fileName, &error);
-
-    if (error.isEmpty())
-      layerMgr_->addToLayerGroup(lgWidget->layerGroup(), layers);
-    else
-      qDebug() << QString("LayerGroupsPane::mouseClicked: failed to load layer group from %1: %2").arg(fileName).arg(error).toLatin1().data();
-  }
+  // Only load the contents of a file when the layer group is selected.
+  if (active)
+    loadLayers(lgWidget);
 
   lgWidget->updateLabels();
 
   emit updated();
+}
+
+void LayerGroupsPane::loadLayers(LayerGroupWidget *lgWidget)
+{
+  QString fileNameOrPattern = lgWidget->layerGroup()->name();
+  QStringList fileNames;
+
+  if (fileNameOrPattern.contains("[")) {
+    QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(fileNameOrPattern);
+    for (int i = 0; i < tfiles.size(); ++i)
+      fileNames.append(tfiles.at(i).first.filePath());
+  } else
+    fileNames.append(fileNameOrPattern);
+
+  foreach (QString fileName, fileNames)
+      layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), QFile(fileName));
 }
 
 QList<LayerGroupWidget *> LayerGroupsPane::allWidgets()
