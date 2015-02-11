@@ -243,15 +243,19 @@ void LayerGroupsPane::loadLayers(LayerGroupWidget *lgWidget)
   QString fileNameOrPattern = lgWidget->layerGroup()->name();
   QStringList fileNames;
 
-  if (fileNameOrPattern.contains("[")) {
-    QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(fileNameOrPattern);
-    for (int i = 0; i < tfiles.size(); ++i)
-      fileNames.append(tfiles.at(i).first.filePath());
-  } else
-    fileNames.append(fileNameOrPattern);
+  // For single files, add a new layer group and return immediately.
+  if (!fileNameOrPattern.contains("[")) {
+    layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), QFile(fileNameOrPattern));
+    return;
+  }
 
-  foreach (QString fileName, fileNames)
-      layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), QFile(fileName));
+  // For collections of files, create one layer group and store all the
+  // layers in that.
+
+  QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(fileNameOrPattern);
+  for (int i = 0; i < tfiles.size(); ++i)
+    layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), tfiles.at(i).first.filePath(),
+                                                          tfiles.at(i).second);
 }
 
 QList<LayerGroupWidget *> LayerGroupsPane::allWidgets()

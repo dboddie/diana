@@ -35,7 +35,8 @@
 #include <QObject>
 //#define QT_SHAREDPOINTER_TRACK_POINTERS
 #include <QSharedPointer>
-#include <QFile>
+#include <QDateTime>
+#include <QFileInfo>
 #include <QList>
 #include <QBitArray>
 #include <EditItems/drawingitembase.h>
@@ -67,7 +68,8 @@ public:
   void addToLayerGroup(const QSharedPointer<LayerGroup> &, const QSharedPointer<Layer> &);
   QSharedPointer<LayerGroup> addToNewLayerGroup(const QList<QSharedPointer<Layer> > &, const QString & = QString());
   QSharedPointer<LayerGroup> addToNewLayerGroup(const QSharedPointer<Layer> &, const QString & = QString());
-  QSharedPointer<LayerGroup> addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QFile &file);
+  QSharedPointer<LayerGroup> addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QFileInfo &file,
+                                                const QDateTime &dateTime = QDateTime());
   QSharedPointer<LayerGroup> createNewLayerGroup(const QString &) const;
   QSharedPointer<Layer> createNewLayer(const QString & = QString(), bool = true, bool = true) const;
   QSharedPointer<Layer> createNewLayer(const QSharedPointer<LayerGroup> &, const QString & = QString(), bool = true, bool = true);

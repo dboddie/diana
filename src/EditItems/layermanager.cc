@@ -190,10 +190,10 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
   return addToNewLayerGroup(QList<QSharedPointer<Layer> >() << layer, name);
 }
 
-QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QFile &file)
+QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QFileInfo &file,
+                                                            const QDateTime &dateTime)
 {
   QString error;
-
   const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, file.fileName(), &error);
 
   if (error.isEmpty())
@@ -201,7 +201,6 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
   else
     METLIBS_LOG_DEBUG(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
                       .arg(file.fileName()).arg(error).toStdString());
-
   return layerGroup;
 }
 
