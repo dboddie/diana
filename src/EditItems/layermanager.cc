@@ -158,7 +158,7 @@ void LayerManager::addToLayerGroup(const QSharedPointer<LayerGroup> &layerGroup,
 {
   foreach(const QSharedPointer<Layer> &layer, layers) {
     // ensure that the layer doesn't exist already (in some layer group)
-    QSharedPointer<LayerGroup> existingLayerGroup =findLayerGroup(layer);
+    QSharedPointer<LayerGroup> existingLayerGroup = findLayerGroup(layer);
     if (existingLayerGroup)
       qFatal("layer '%s' already exists in layer group '%s'",
              layer->name().toLatin1().data(),
@@ -199,7 +199,7 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
   if (error.isEmpty())
     addToLayerGroup(layerGroup, layers);
   else
-    METLIBS_LOG_DEBUG(QString("LayerGroupsPane::mouseClicked: failed to load layer group from %1: %2")
+    METLIBS_LOG_DEBUG(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
                       .arg(file.fileName()).arg(error).toStdString());
 
   return layerGroup;
