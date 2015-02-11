@@ -235,6 +235,9 @@ void LayerGroupsPane::mouseClicked(QMouseEvent *event)
   emit updated();
 }
 
+/**
+ * Load the layers referred to by the given \a lgWidget.
+*/
 void LayerGroupsPane::loadLayers(LayerGroupWidget *lgWidget)
 {
   QString fileNameOrPattern = lgWidget->layerGroup()->name();

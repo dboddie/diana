@@ -103,4 +103,30 @@ QList<QSharedPointer<Layer> > &LayerGroup::layersRef()
   return layers_;
 }
 
+QSet<QString> LayerGroup::getTimes() const
+{
+  QSet<QString> times;
+
+  // The following strings could be made configurable:
+  static const char* timeProps[2] = {"time", "TimeSpan:begin"};
+
+  foreach (const QSharedPointer<Layer> &layer, layersRef()) {
+
+    if (layer->isVisible()) {
+      foreach (const QSharedPointer<DrawingItemBase> item, layer->items()) {
+        QString timeStr;
+        for (unsigned int i = 0; i < 2; ++i) {
+          timeStr = item->properties().value(timeProps[i]).toString();
+          if (!timeStr.isEmpty()) {
+            times.insert(timeStr);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return times;
+}
+
 } // namespace

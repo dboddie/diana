@@ -33,6 +33,7 @@
 #define EDITITEMSLAYERGROUP_H
 
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QList>
 //#define QT_SHAREDPOINTER_TRACK_POINTERS
@@ -58,6 +59,7 @@ public:
   void setActive(bool);
   const QList<QSharedPointer<Layer> > &layersRef() const;
   QList<QSharedPointer<Layer> > &layersRef();
+  QSet<QString> getTimes() const;
 private:
   int id_;
   static int nextId_;

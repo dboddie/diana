@@ -62,8 +62,6 @@
 #define MILOGGER_CATEGORY "diana.DrawingManager"
 #include <miLogger/miLogging.h>
 
-#include <QDebug>
-
 using namespace std;
 using namespace miutil;
 
@@ -415,21 +413,15 @@ std::vector<miutil::miTime> DrawingManager::getTimes() const
   std::vector<miutil::miTime> output;
   std::set<miutil::miTime> times;
 
-  QList<QSharedPointer<EditItems::Layer> > layers = layerMgr_->orderedLayers();
-  for (int i = layers.size() - 1; i >= 0; --i) {
+  // Query the layer groups to find the available times. These will query
+  // individual layers as necessary.
 
-    const QSharedPointer<EditItems::Layer> layer = layers.at(i);
-    if (layer->isVisible()) {
+  QList<QSharedPointer<EditItems::LayerGroup> > layerGroups = layerMgr_->layerGroups();
+  for (int i = layerGroups.size() - 1; i >= 0; --i) {
 
-      QList<QSharedPointer<DrawingItemBase> > items = layer->items();
-      foreach (const QSharedPointer<DrawingItemBase> item, items) {
-
-        std::string time_str;
-        std::string prop_str = timeProperty(item->propertiesRef(), time_str);
-        if (!time_str.empty())
-          times.insert(miutil::miTime(time_str));
-      }
-    }
+    QSet<QString> groupTimes = layerGroups.at(i)->getTimes();
+    foreach (const QString &time, groupTimes)
+      times.insert(miutil::miTime(time.toStdString()));
   }
 
   output.assign(times.begin(), times.end());
@@ -666,12 +658,12 @@ void DrawingManager::enablePlotElement(const PlotElement &pe)
   bool ok = false;
   const int i = s.toInt(&ok);
   if (!ok) {
-    qWarning() << "DM::enablePlotElement(): failed to extract int from pe.str:" << s;
+    METLIBS_LOG_WARN("DM::enablePlotElement(): failed to extract int from pe.str:" << pe.str);
     return;
   }
 
   if (!plotElems_.contains(i)) {
-    qWarning() << "DM::enablePlotElement(): key not found in plotElems_:" << i;
+    METLIBS_LOG_WARN("DM::enablePlotElement(): key not found in plotElems_:" << i);
     return;
   }
 
