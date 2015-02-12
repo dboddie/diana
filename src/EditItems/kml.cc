@@ -37,6 +37,7 @@
 #include "drawingpolyline.h"
 #include "drawingsymbol.h"
 #include "drawingcomposite.h"
+#include <diPlotModule.h>
 #include <cmath>
 #include <QAbstractMessageHandler>
 #include <QXmlSchemaValidator>
@@ -578,7 +579,16 @@ QList<QSharedPointer<EditItems::Layer> > createFromDomDocument(
 
     // Create a suitable item for this KML structure.
     QString objectType = pmExtData.value("met:objectType");
-    DrawingItemBase *itemObj = DrawingManager::instance()->createItem(objectType);
+
+    // Try to create an editable item using the Edit Item Manager. If that
+    // fails, fall back on the Drawing Manager to create display items.
+    DrawingItemBase *itemObj;
+    DrawingManager *manager = dynamic_cast<DrawingManager *>(PlotModule::instance()->getManager("EDITDRAWING"));
+    if (manager)
+      itemObj = manager->createItem(objectType);
+    else
+      itemObj = DrawingManager::instance()->createItem(objectType);
+
     if (!itemObj) {
       *error = QString("unknown element found");
       return QList<QSharedPointer<EditItems::Layer> >();
