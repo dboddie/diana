@@ -32,10 +32,13 @@
 #ifndef EDITITEMSLAYERGROUP_H
 #define EDITITEMSLAYERGROUP_H
 
+#include <QDateTime>
+#include <QFileInfo>
+#include <QList>
 #include <QObject>
+#include <QPair>
 #include <QSet>
 #include <QString>
-#include <QList>
 //#define QT_SHAREDPOINTER_TRACK_POINTERS
 #include <QSharedPointer>
 
@@ -60,6 +63,8 @@ public:
   const QList<QSharedPointer<Layer> > &layersRef() const;
   QList<QSharedPointer<Layer> > &layersRef();
   QSet<QString> getTimes() const;
+  void setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles);
+
 private:
   int id_;
   static int nextId_;
@@ -68,6 +73,7 @@ private:
   bool editable_;
   bool active_;
   QList<QSharedPointer<Layer> > layers_;
+  QList<QPair<QFileInfo, QDateTime> > tfiles_;
 };
 
 } // namespace

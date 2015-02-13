@@ -38,10 +38,12 @@
 #include <EditItems/layermanager.h>
 #include <EditItems/layer.h>
 #include <EditItems/layergroup.h>
+#include <EditItems/timefilesextractor.h>
 
 #define MILOGGER_CATEGORY "diana.LayerManager"
 #include <miLogger/miLogging.h>
 
+#include <QDebug>
 namespace EditItems {
 
 LayerManager::LayerManager()
@@ -190,17 +192,37 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
   return addToNewLayerGroup(QList<QSharedPointer<Layer> >() << layer, name);
 }
 
-QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QFileInfo &file,
-                                                            const QDateTime &dateTime)
+QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QString &source)
 {
-  QString error;
-  const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, file.fileName(), &error);
+  // For single files, add a new layer group and return immediately.
+  if (!source.contains("[")) {
+    QString error;
+    const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, source, &error);
 
-  if (error.isEmpty())
+    if (!error.isEmpty())
+      METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
+                       .arg(source).arg(error).toStdString());
+
     addToLayerGroup(layerGroup, layers);
-  else
-    METLIBS_LOG_DEBUG(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
-                      .arg(file.fileName()).arg(error).toStdString());
+    return layerGroup;
+  }
+
+  // For collections of files, create one layer group and store all the
+  // layers in that.
+  QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(source);
+  layerGroup->setFiles(tfiles);
+
+  if (!tfiles.isEmpty()) {
+    QString error;
+    QString filePath = tfiles.first().first.filePath();
+    const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, filePath, &error);
+
+    if (!error.isEmpty())
+      METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
+                       .arg(filePath).arg(error).toStdString());
+
+    addToLayerGroup(layerGroup, layers);
+  }
   return layerGroup;
 }
 

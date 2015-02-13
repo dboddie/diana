@@ -41,7 +41,6 @@
 #include <EditItems/layer.h>
 #include <EditItems/layergroup.h>
 #include <EditItems/layermanager.h>
-#include <EditItems/timefilesextractor.h>
 
 #include "fileopen.xpm"
 
@@ -53,6 +52,9 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QToolButton>
+
+#define MILOGGER_CATEGORY "diana.LayerGroupsPane"
+#include <miLogger/miLogging.h>
 
 namespace EditItems {
 
@@ -240,22 +242,8 @@ void LayerGroupsPane::mouseClicked(QMouseEvent *event)
 */
 void LayerGroupsPane::loadLayers(LayerGroupWidget *lgWidget)
 {
-  QString fileNameOrPattern = lgWidget->layerGroup()->name();
-  QStringList fileNames;
-
-  // For single files, add a new layer group and return immediately.
-  if (!fileNameOrPattern.contains("[")) {
-    layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), QFile(fileNameOrPattern));
-    return;
-  }
-
-  // For collections of files, create one layer group and store all the
-  // layers in that.
-
-  QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(fileNameOrPattern);
-  for (int i = 0; i < tfiles.size(); ++i)
-    layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), tfiles.at(i).first.filePath(),
-                                                          tfiles.at(i).second);
+  QString source = lgWidget->layerGroup()->name();
+  layerMgr_->addToNewLayerGroup(lgWidget->layerGroup(), source);
 }
 
 QList<LayerGroupWidget *> LayerGroupsPane::allWidgets()

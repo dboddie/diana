@@ -107,6 +107,9 @@ QSet<QString> LayerGroup::getTimes() const
 {
   QSet<QString> times;
 
+  for (int i = 0; i < tfiles_.size(); ++i)
+    times.insert(tfiles_.at(i).second.toString(Qt::ISODate) + "Z");
+
   // The following strings could be made configurable:
   static const char* timeProps[2] = {"time", "TimeSpan:begin"};
 
@@ -116,7 +119,7 @@ QSet<QString> LayerGroup::getTimes() const
       foreach (const QSharedPointer<DrawingItemBase> item, layer->items()) {
         QString timeStr;
         for (unsigned int i = 0; i < 2; ++i) {
-          timeStr = item->properties().value(timeProps[i]).toString();
+          timeStr = item->propertiesRef().value(timeProps[i]).toString();
           if (!timeStr.isEmpty()) {
             times.insert(timeStr);
             break;
@@ -127,6 +130,11 @@ QSet<QString> LayerGroup::getTimes() const
   }
 
   return times;
+}
+
+void LayerGroup::setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles)
+{
+  tfiles_ = tfiles;
 }
 
 } // namespace
