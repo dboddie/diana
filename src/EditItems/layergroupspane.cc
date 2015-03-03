@@ -222,6 +222,8 @@ void LayerGroupsPane::addToNewLGFromFile()
 
 void LayerGroupsPane::mouseClicked(QMouseEvent *event)
 {
+  METLIBS_LOG_SCOPE();
+
   LayerGroupWidget *lgWidget = qobject_cast<LayerGroupWidget *>(sender());
   Q_ASSERT(lgWidget);
 // FIXME defaultLayerGroup does not exist  Q_ASSERT(lgWidget->layerGroup() != layerMgr_->defaultLayerGroup());

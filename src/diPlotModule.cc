@@ -37,6 +37,7 @@
 #include <diObsPlot.h>
 
 #include <diFieldPlot.h>
+#include "diLocationPlot.h"
 #include <diMapPlot.h>
 #include <diTrajectoryPlot.h>
 #include <diMeasurementsPlot.h>
@@ -1506,9 +1507,8 @@ bool PlotModule::PhysToGeo(const float x, const float y, float& lat, float& lon)
 
   if (mapdefined && plotw > 0 && ploth > 0) {
     GridConverter gc;
-    Area area = staticPlot_->getMapArea();
-
-    Rectangle r = staticPlot_->getPlotSize();
+    const Area& area = staticPlot_->getMapArea();
+    const Rectangle& r = staticPlot_->getPlotSize();
     int npos = 1;
     float gx = r.x1 + r.width() / plotw * x;
     float gy = r.y1 + r.height() / ploth * y;
@@ -1523,7 +1523,8 @@ bool PlotModule::PhysToGeo(const float x, const float y, float& lat, float& lon)
   return ret;
 }
 
-bool PlotModule::PhysToGeo(const float x, const float y, float& lat, float& lon, Area area, Rectangle r)
+bool PlotModule::PhysToGeo(const float x, const float y, float& lat, float& lon,
+    const Area& area, const Rectangle& r)
 {
   bool ret=false;
 
@@ -1567,7 +1568,8 @@ bool PlotModule::GeoToPhys(const float lat, const float lon, float& x, float& y)
   return ret;
 }
 
-bool PlotModule::GeoToPhys(const float lat, const float lon, float& x, float& y, Area area, Rectangle r)
+bool PlotModule::GeoToPhys(const float lat, const float lon, float& x, float& y,
+    const Area& area, const Rectangle& r)
 {
   bool ret=false;
 
@@ -2221,7 +2223,7 @@ void PlotModule::obsStepChanged(int step)
   setAnnotations();
 }
 
-void PlotModule::trajPos(vector<std::string>& vstr)
+void PlotModule::trajPos(const vector<std::string>& vstr)
 {
   const int n = vtp.size();
 
@@ -2247,7 +2249,7 @@ void PlotModule::trajPos(vector<std::string>& vstr)
   }
 }
 
-void PlotModule::measurementsPos(vector<std::string>& vstr)
+void PlotModule::measurementsPos(const vector<std::string>& vstr)
 {
   const int n = vMeasurementsPlot.size();
   //if vstr starts with "quit", delete all MeasurementsPlot objects
@@ -2378,7 +2380,7 @@ void PlotModule::setObjAuto(bool autoF)
   objm->setObjAuto(autoF);
 }
 
-void PlotModule::areaInsert(Area a, bool newArea)
+void PlotModule::areaInsert(const Area& a, bool newArea)
 {
   if (newArea && areaSaved) {
     areaSaved = false;

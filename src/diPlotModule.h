@@ -36,7 +36,6 @@
 #include <diMapMode.h>
 #include <diPrintOptions.h>
 #include <puTools/miTime.h>
-#include <diLocationPlot.h>
 #include <diDisplayObjects.h>
 #include <diAreaObjects.h>
 
@@ -51,6 +50,8 @@ class AnnotationPlot;
 class FieldManager;
 class FieldPlotManager;
 class FieldPlot;
+struct LocationData;
+class LocationPlot;
 class Manager;
 class ObsManager;
 class SatManager;
@@ -238,11 +239,11 @@ public:
   /// return latitude,longitude from physical x,y
   bool PhysToGeo(const float, const float, float&, float&);
   bool PhysToGeo(const float x, const float y, float& lat, float& lon,
-      Area area, Rectangle r);
+      const Area& area, const Rectangle& r);
   /// return physical x,y from physical latitude,longitude
   bool GeoToPhys(const float, const float, float&, float&);
-  bool GeoToPhys(const float, const float, float&, float&, Area area,
-      Rectangle r);
+  bool GeoToPhys(const float, const float, float&, float&,
+      const Area& area, const Rectangle& r);
   /// return map x,y from physical x,y
   void PhysToMap(const float, const float, float&, float&);
   /// return field grid x,y from map x,y if field defined and map proj = field proj
@@ -324,7 +325,7 @@ public:
 
   // Trajectories
   /// handles trajectory plot info strings
-  void trajPos(std::vector<std::string>&);
+  void trajPos(const std::vector<std::string>&);
   std::vector<std::string> getTrajectoryFields();
   bool startTrajectoryComputation();
   void stopTrajectoryComputation();
@@ -332,7 +333,7 @@ public:
   bool printTrajectoryPositions(const std::string& filename);
 
   // Measurements (distance, velocity)
-  void measurementsPos(std::vector<std::string>&);
+  void measurementsPos(const std::vector<std::string>&);
 
   //show or hide all annotations (for fields, observations, satellite etc.)
   void showAnnotations(bool on)
@@ -369,7 +370,7 @@ public:
   void setObjAuto(bool autoF);
 
   /// push a new area onto the area stack
-  void areaInsert(Area, bool);
+  void areaInsert(const Area&, bool);
   /// respond to shortcuts to move to predefined areas
   void changeArea(QKeyEvent* ke);
   /// zoom to specified rectangle

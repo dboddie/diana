@@ -77,6 +77,7 @@ VprofData::~VprofData()
 
 void VprofData::readStationNames(const std::string& stationsfilename)
 {
+  METLIBS_LOG_SCOPE();
   FILE *stationfile;
   char line[1024];
 
@@ -157,6 +158,10 @@ bool VprofData::readFimex(vcross::Setup_p setup, const std::string& reftimestr)
   METLIBS_LOG_SCOPE();
 
   collector = miutil::make_shared<vcross::Collector>(setup);
+  vcross::Source_p source = collector->getResolver()->getSource(modelName);
+  if (!source)
+    return false;
+
 
   fields.push_back(VP_AIR_TEMPERATURE);
   fields.push_back(VP_DEW_POINT_TEMPERATURE);
@@ -166,7 +171,7 @@ bool VprofData::readFimex(vcross::Setup_p setup, const std::string& reftimestr)
   fields.push_back(VP_OMEGA);
 
   if ( reftimestr.empty() ) {
-    reftime = collector->getResolver()->getSource(modelName)->getLatestReferenceTime();
+    reftime = source->getLatestReferenceTime();
   } else {
     miTime mt(reftimestr);
     reftime = util::from_miTime(mt);
@@ -182,24 +187,18 @@ bool VprofData::readFimex(vcross::Setup_p setup, const std::string& reftimestr)
   if (not inv)
     return false;
 
-  if (!inv->crossections.empty()) {
-    std::vector<station> stations;
-
+  if (!stationsFileName.empty()) {
+    readStationNames(stationsFileName);
+  } else {
     BOOST_FOREACH(vcross::Crossection_cp cs, inv->crossections) {
-      if (cs->points.size() != 1)
+      if (cs->length() != 1)
         continue;
-      posName.push_back(cs->label);
-      posLatitude.push_back(cs->points[0].latDeg());
-      posLongitude.push_back(cs->points[0].lonDeg());
+      posName.push_back(cs->label());
+      posLatitude.push_back(cs->point(0).latDeg());
+      posLongitude.push_back(cs->point(0).lonDeg());
       posDeltaLatitude.push_back(0.0);
       posDeltaLongitude.push_back(0.0);
       posTemp.push_back(0);
-    }
-
-  } else {
-
-    if (!stationsFileName.empty()) {
-      readStationNames(stationsFileName);
     }
   }
 
@@ -494,16 +493,10 @@ VprofPlot* VprofData::getData(const std::string& name, const miTime& time)
     // This replaces the current dynamic crossection, if present.
     // TODO: Should be tested when more than one time step is available.
     if (!stationsFileName.empty()) {
-      Source_p s = collector->getResolver()->getSource(modelName);
-      s->addDynamicCrossection(s->getLatestReferenceTime(), posName[iPos], LonLat_v(1, pos));
-    }
-
-    const vcross::Time_s reftimes = collector->getResolver()->getSource(modelName)->getReferenceTimes();
-    vector<miTime> rtv;
-    rtv.reserve(reftimes.size());
-    for (Time_s::const_iterator it=reftimes.begin(); it != reftimes.end(); ++it){
-      rtv.push_back(util::to_miTime(*it));
-      METLIBS_LOG_INFO(LOGVAL(util::to_miTime(*it)));
+      Source_p source = collector->getResolver()->getSource(modelName);
+      if (!source)
+        return 0;
+      source->addDynamicCrossection(reftime, posName[iPos], LonLat_v(1, pos));
     }
 
     const vcross::ModelReftime mr(modelName, reftime);

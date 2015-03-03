@@ -57,6 +57,8 @@ public:
   int id() const;
   QString name() const;
   void setName(const QString &);
+  QString fileName() const;
+  void setFileName(const QString &);
   bool isEditable() const;
   bool isActive() const;
   void setActive(bool);
@@ -70,6 +72,7 @@ private:
   static int nextId_;
   static int nextId();
   QString name_;
+  QString fileName_;
   bool editable_;
   bool active_;
   QList<QSharedPointer<Layer> > layers_;

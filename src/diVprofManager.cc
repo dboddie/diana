@@ -76,7 +76,7 @@ using namespace road;
 using namespace std;
 using miutil::miTime;
 
-VprofManager::VprofManager(Controller* co)
+VprofManager::VprofManager()
 : amdarStationList(false), vpdiag(0), showObs(false),
   showObsTemp(false), showObsPilot(false), showObsAmdar(false),
   plotw(0), ploth(0), hardcopy(false)
@@ -113,6 +113,11 @@ void VprofManager::cleanup()
   // NOTE: Flush the field cache
 }
 
+void VprofManager::init()
+{
+  parseSetup();
+  updateObsFileList();
+}
 
 void VprofManager::parseSetup()
 {
@@ -221,17 +226,17 @@ void VprofManager::parseSetup()
         }
         if ( filetype !="standard" ) {
           sources.push_back(vstr[i]);
-
-          stationsfilenames[model]= stationsfilename;
-          filetypes[model] = filetype;
-        } else {
+        }
+//          stationsfilenames[model]= stationsfilename;
+//          filetypes[model] = filetype;
+//        } else {
           filenames[model]= filename;
           stationsfilenames[model]= stationsfilename;
           filetypes[model] = filetype;
           dialogModelNames.push_back(model);
           dialogFileNames.push_back(filename);
 
-        }
+        //}
       }
     }
 
@@ -250,13 +255,13 @@ void VprofManager::parseSetup()
   miutil::SetupParser::getSection("VERTICAL_PROFILE_COMPUTATIONS", computations);
   setup = miutil::make_shared<vcross::Setup>();
   setup->configureSources(sources);
-  vcross::string_v models = setup->getAllModelNames();
-  for ( size_t i=0; i<models.size() ;i++ ) {
-    METLIBS_LOG_INFO(LOGVAL(models[i]));
-    filenames[models[i]]= models[i];
-    dialogModelNames.push_back(models[i]);
-    dialogFileNames.push_back(models[i]);
-  }
+//  vcross::string_v models = setup->getAllModelNames();
+//  for ( size_t i=0; i<models.size() ;i++ ) {
+//    METLIBS_LOG_INFO(LOGVAL(models[i]));
+//    filenames[models[i]]= models[i];
+//    dialogModelNames.push_back(models[i]);
+//    dialogFileNames.push_back(models[i]);
+//  }
 
   setup->configureComputations(computations);
 
@@ -713,8 +718,7 @@ bool VprofManager::plot()
 vector <std::string> VprofManager::getModelNames()
 {
   METLIBS_LOG_SCOPE();
-  parseSetup();
-  updateObsFileList();
+  init();
   return dialogModelNames;
 }
 /***************************************************************************/
@@ -739,16 +743,6 @@ std::vector <std::string> VprofManager::getReferencetimes(const std::string mode
 
 /***************************************************************************/
 
-vector <std::string> VprofManager::getModelFiles()
-{
-  METLIBS_LOG_SCOPE();
-  parseSetup();
-  return dialogFileNames;
-}
-
-
-/***************************************************************************/
-
 void VprofManager::setFieldModels(const vector<string>& fieldmodels)
 {
   //called when model selected in field dialog
@@ -758,28 +752,37 @@ void VprofManager::setFieldModels(const vector<string>& fieldmodels)
 
 /***************************************************************************/
 
-void VprofManager::setSelectedModels(const vector <SelectedModel>& models,
+void VprofManager::setSelectedModels(const vector <std::string>& models,
     bool obs)
 {
   METLIBS_LOG_SCOPE();
   //called when model selected in model dialog
-  if ( obs ) {
-    showObsTemp = showObsPilot = showObsAmdar = true;
-  } else {
-    for ( size_t i=0; i<models.size(); ++i ) {
-      if( obs || models[i].model == "obs.temp" ) {
-        showObsTemp = true;
-      } else if( obs || models[i].model == "obs.pilot" ) {
-        showObsPilot= true;
-      } else if( obs || models[i].model == "obs.amdar" ) {
-        showObsAmdar= true;
-      }
+
+  selectedModels.clear();
+  for ( size_t i=0; i<models.size(); ++i ) {
+    SelectedModel selectedModel;
+    vector<std::string> vstr = miutil::split(models[i]," ");
+    if ( vstr.size() > 0 ) {
+      selectedModel.model = vstr[0];
+    }
+    if ( vstr.size() > 1 ) {
+      selectedModel.reftime = vstr[1];
+    }
+    selectedModels.push_back(selectedModel);
+  }
+
+  showObsTemp = showObsPilot = showObsAmdar = obs;
+  for ( size_t i=0; i<models.size(); ++i ) {
+    if( selectedModels[i].model == "obs.temp" ) {
+      showObsTemp = true;
+    } else if( selectedModels[i].model == "obs.pilot" ) {
+      showObsPilot= true;
+    } else if( selectedModels[i].model == "obs.amdar" ) {
+      showObsAmdar= true;
     }
   }
   showObs= (showObsTemp || showObsPilot || showObsAmdar );
-  //set data from models, not files
-  selectedModels = models;
-  METLIBS_LOG_DEBUG(LOGVAL(models.size()));
+
 }
 
 
@@ -799,7 +802,7 @@ bool VprofManager::initVprofData(const SelectedModel& selectedModel)
 {
   METLIBS_LOG_SCOPE();
   std::string model_part=selectedModel.model.substr(0,selectedModel.model.find("@"));
-  std::auto_ptr<VprofData> vpd(new VprofData( selectedModel.model, stationsfilenames[model_part]));
+  std::auto_ptr<VprofData> vpd(new VprofData( selectedModel.model, stationsfilenames[selectedModel.model]));
   bool ok = false;
   if ( filetypes[model_part] == "standard") {
     ok = vpd->readFile(filenames[selectedModel.model]);
@@ -1129,7 +1132,7 @@ void VprofManager::updateObs()
 
 std::string VprofManager::getAnnotationString()
 {
-  std::string str = std::string("Vertikalprofiler ");
+  std::string str = std::string("Vertical profiles ");
   if (onlyObs)
     str += plotTime.isoTime();
   else
