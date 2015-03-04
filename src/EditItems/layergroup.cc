@@ -31,6 +31,7 @@
 
 #include <EditItems/layergroup.h>
 #include <EditItems/layer.h>
+#include <EditItems/timefilesextractor.h>
 
 namespace EditItems {
 
@@ -140,6 +141,18 @@ QSet<QString> LayerGroup::getTimes() const
   }
 
   return times;
+}
+
+QSet<QString> LayerGroup::files() const
+{
+  QSet<QString> f;
+  for (int i = 0; i < tfiles_.size(); ++i)
+    f.insert(tfiles_.at(i).first.filePath());
+
+  if (tfiles_.isEmpty())
+    f.insert(fileName());
+
+  return f;
 }
 
 void LayerGroup::setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles)

@@ -65,6 +65,7 @@ public:
   const QList<QSharedPointer<Layer> > &layersRef() const;
   QList<QSharedPointer<Layer> > &layersRef();
   QSet<QString> getTimes() const;
+  QSet<QString> files() const;
   void setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles);
 
 private:

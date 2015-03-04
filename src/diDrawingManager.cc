@@ -210,7 +210,7 @@ bool DrawingManager::parseSetup()
     } else if (items.contains("tseries")) {
       const QString timeSeries = items.value("tseries");
       const QString filePattern = items.value("tsfiles");
-      drawings_.insert(filePattern);
+      drawings_[timeSeries] = filePattern;
     }
   }
 

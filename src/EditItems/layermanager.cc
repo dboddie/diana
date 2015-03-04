@@ -29,6 +29,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <QDebug>
 #include <EditItems/kml.h>
 #include <EditItems/edititembase.h>
 #include <EditItems/editpolyline.h>
@@ -38,12 +39,10 @@
 #include <EditItems/layermanager.h>
 #include <EditItems/layer.h>
 #include <EditItems/layergroup.h>
-#include <EditItems/timefilesextractor.h>
 
 #define MILOGGER_CATEGORY "diana.LayerManager"
 #include <miLogger/miLogging.h>
 
-#include <QDebug>
 namespace EditItems {
 
 LayerManager::LayerManager()
@@ -196,9 +195,11 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
 QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QString &source)
 {
   // For single files, add a new layer group and return immediately.
-  if (!source.contains("[")) {
+  QString filePathOrPattern = layerGroup->fileName();
+
+  if (!filePathOrPattern.contains("[")) {
     QString error;
-    const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, source, &error);
+    const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, layerGroup->fileName(), &error);
 
     if (!error.isEmpty())
       METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
@@ -210,7 +211,7 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
 
   // For collections of files, create one layer group and store all the
   // layers in that.
-  QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(source);
+  QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(filePathOrPattern);
   layerGroup->setFiles(tfiles);
 
   if (!tfiles.isEmpty()) {
