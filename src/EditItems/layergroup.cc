@@ -84,9 +84,18 @@ QString LayerGroup::fileName() const
   return fileName_;
 }
 
-void LayerGroup::setFileName(const QString &fn)
+void LayerGroup::setFileName(const QString &filePathOrPattern)
 {
-  fileName_ = fn;
+  if (filePathOrPattern.contains("[")) {
+    // For collections of files, find all the file names and store them internally.
+    QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(filePathOrPattern);
+    setFiles(tfiles);
+
+    if (!tfiles.isEmpty())
+      fileName_ = tfiles.first().first.filePath();
+  }
+  else
+    fileName_ = filePathOrPattern;
 }
 
 bool LayerGroup::isEditable() const
@@ -118,8 +127,8 @@ QSet<QString> LayerGroup::getTimes() const
 {
   QSet<QString> times;
 
-  for (int i = 0; i < tfiles_.size(); ++i)
-    times.insert(tfiles_.at(i).second.toString(Qt::ISODate) + "Z");
+  foreach (const QDateTime &dateTime, tfiles_.keys())
+    times.insert(dateTime.toString(Qt::ISODate) + "Z");
 
   // The following strings could be made configurable:
   static const char* timeProps[2] = {"time", "TimeSpan:begin"};
@@ -145,19 +154,25 @@ QSet<QString> LayerGroup::getTimes() const
 
 QSet<QString> LayerGroup::files() const
 {
-  QSet<QString> f;
-  for (int i = 0; i < tfiles_.size(); ++i)
-    f.insert(tfiles_.at(i).first.filePath());
+  // If the layer does not contain a collection of files, return the single
+  // file held. Otherwise, convert the collection to a set of file names.
 
   if (tfiles_.isEmpty())
-    f.insert(fileName());
+    return QSet<QString>() << fileName();
+  else {
+    QList<QFileInfo> files = tfiles_.values();
+    QSet<QString> f;
+    foreach (const QFileInfo &fi, files)
+      f.insert(fi.filePath());
 
-  return f;
+    return f;
+  }
 }
 
 void LayerGroup::setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles)
 {
-  tfiles_ = tfiles;
+  for (int i = 0; i < tfiles.size(); ++i)
+    tfiles_[tfiles.at(i).second] = tfiles.at(i).first;
 }
 
 } // namespace

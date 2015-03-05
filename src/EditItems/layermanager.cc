@@ -29,13 +29,12 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <QDebug>
-#include <EditItems/kml.h>
 #include <EditItems/edititembase.h>
 #include <EditItems/editpolyline.h>
 #include <EditItems/editsymbol.h>
 #include <EditItems/edittext.h>
 #include <EditItems/editcomposite.h>
+#include <EditItems/kml.h>
 #include <EditItems/layermanager.h>
 #include <EditItems/layer.h>
 #include <EditItems/layergroup.h>
@@ -194,37 +193,14 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
 
 QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QString &source)
 {
-  // For single files, add a new layer group and return immediately.
-  QString filePathOrPattern = layerGroup->fileName();
+  QString error;
+  const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, layerGroup->fileName(), &error);
 
-  if (!filePathOrPattern.contains("[")) {
-    QString error;
-    const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, layerGroup->fileName(), &error);
+  if (!error.isEmpty())
+    METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
+                     .arg(source).arg(error).toStdString());
 
-    if (!error.isEmpty())
-      METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
-                       .arg(source).arg(error).toStdString());
-
-    addToLayerGroup(layerGroup, layers);
-    return layerGroup;
-  }
-
-  // For collections of files, create one layer group and store all the
-  // layers in that.
-  QList<QPair<QFileInfo, QDateTime> > tfiles = TimeFilesExtractor::getFiles(filePathOrPattern);
-  layerGroup->setFiles(tfiles);
-
-  if (!tfiles.isEmpty()) {
-    QString error;
-    QString filePath = tfiles.first().first.filePath();
-    const QList<QSharedPointer<Layer> > layers = KML::createFromFile(this, filePath, &error);
-
-    if (!error.isEmpty())
-      METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
-                       .arg(filePath).arg(error).toStdString());
-
-    addToLayerGroup(layerGroup, layers);
-  }
+  addToLayerGroup(layerGroup, layers);
   return layerGroup;
 }
 

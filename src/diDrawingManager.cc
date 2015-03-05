@@ -331,26 +331,8 @@ bool DrawingManager::loadDrawing(const QString &name)
   else
     fileName = name;
 
-  // parse file and create item layers
-  QString error;
-  QList<QSharedPointer<EditItems::Layer> > layers = KML::createFromFile(layerMgr_, fileName, &error);
-
-  if (!error.isEmpty()) {
-    METLIBS_LOG_WARN("Failed to create items from file " << fileName.toStdString() << ": " << error.toStdString());
-    return false;
-  }
-  if (layers.isEmpty()) {
-    METLIBS_LOG_WARN("File " << fileName.toStdString() << " contained no items");
-    return false;
-  }
-
-  // initialize screen coordinates from lat/lon         ### already done in KML::createFromFile() ???
-  foreach (QSharedPointer<EditItems::Layer> layer, layers) {
-    for (int i = 0; i < layer->itemCount(); ++i)
-      setFromLatLonPoints(*(layer->itemRef(i)), layer->item(i)->getLatLonPoints());
-  }
-
-  layerMgr_->addToNewLayerGroup(layers, name, fileName);
+  QSharedPointer<EditItems::LayerGroup> layerGroup = layerMgr_->createNewLayerGroup(name, fileName);
+  layerMgr_->addToNewLayerGroup(layerGroup, name);
   loaded_[name] = fileName;
 
   return true;

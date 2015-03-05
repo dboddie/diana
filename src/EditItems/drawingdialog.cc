@@ -250,7 +250,6 @@ void DrawingDialog::makeProduct()
       sources.insert(item->property("srcFile").toString());
   }
 
-  qDebug() << __FUNCTION__ << sources;
   // Map the files back to names for the drawings if possible.
   std::vector<std::string> inp;
   foreach (const QSharedPointer<LayerGroup> &layerGroup, layerMgr_->layerGroups()) {
@@ -259,12 +258,10 @@ void DrawingDialog::makeProduct()
     if (layerGroup->isActive()) {
       foreach (QString file, layerGroup->files()) {
         if (sources.contains(file)) {
-          qDebug() << "" << file << layerGroup->name();
           if (layerGroup->name() == file)
             inp.push_back("DRAWING file=\"" + file.toStdString() + "\"");
           else
             inp.push_back("DRAWING name=\"" + layerGroup->name().toStdString() + "\"");
-          qDebug() << " " << QString::fromStdString(inp.back());
           break;
         }
       }

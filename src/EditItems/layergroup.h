@@ -35,6 +35,7 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QList>
+#include <QMap>
 #include <QObject>
 #include <QPair>
 #include <QSet>
@@ -77,7 +78,7 @@ private:
   bool editable_;
   bool active_;
   QList<QSharedPointer<Layer> > layers_;
-  QList<QPair<QFileInfo, QDateTime> > tfiles_;
+  QMap<QDateTime, QFileInfo> tfiles_;
 };
 
 } // namespace
