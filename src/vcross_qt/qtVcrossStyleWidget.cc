@@ -87,6 +87,8 @@ VcrossStyleWidget::VcrossStyleWidget(QWidget* parent)
   cp->addKey(PlotOptions::key_lineinterval,  "",0,CommandParser::cmdFloat);
   cp->addKey(PlotOptions::key_density,       "",0,CommandParser::cmdInt);
   cp->addKey(PlotOptions::key_vectorunit,    "",0,CommandParser::cmdFloat);
+  cp->addKey(PlotOptions::key_vectorscale_x, "",0,CommandParser::cmdFloat);
+  cp->addKey(PlotOptions::key_vectorscale_y, "",0,CommandParser::cmdFloat);
   cp->addKey(PlotOptions::key_vectorthickness, "",0,CommandParser::cmdFloat);
   cp->addKey(PlotOptions::key_extremeType,   "",0,CommandParser::cmdString);
   cp->addKey(PlotOptions::key_extremeSize,   "",0,CommandParser::cmdFloat);
@@ -190,6 +192,10 @@ void VcrossStyleWidget::setupUi()
       SLOT(densityCboxActivated(int)));
   connect(ui->vectorunitCbox, SIGNAL(activated(int)),
       SLOT(vectorunitCboxActivated(int)));
+  connect(ui->vectorscalexSbox, SIGNAL(valueChanged(const QString&)),
+      SLOT(vectorscalexSboxChanged(const QString&)));
+  connect(ui->vectorscaleySbox, SIGNAL(valueChanged(const QString&)),
+      SLOT(vectorscaleySboxChanged(const QString&)));
   connect(ui->vectorthicknessSpinBox, SIGNAL(valueChanged(int)),
       SLOT(vectorthicknessChanged(int)));
 
@@ -325,11 +331,11 @@ void VcrossStyleWidget::setupUi()
   connect(ui->alphaSpinBox, SIGNAL(valueChanged(int)),
       SLOT(alphaChanged(int)));
   connect(ui->zero1ComboBox, SIGNAL(activated(int)),
-      SLOT(zero1ComboBoxToggled(int)));
+      SLOT(zero1ComboBoxToggled()));
   connect(ui->min1ComboBox, SIGNAL(activated(int)),
-      SLOT(min1ComboBoxToggled(int)));
+      SLOT(min1ComboBoxToggled()));
   connect(ui->max1ComboBox, SIGNAL( activated(int)),
-      SLOT(max1ComboBoxToggled(int)));
+      SLOT(max1ComboBoxToggled()));
 }
 
 void VcrossStyleWidget::enableFieldOptions()
@@ -575,6 +581,32 @@ void VcrossStyleWidget::enableFieldOptions()
     vectorunit= numberList(ui->vectorunitCbox, e);
   } else if (ui->vectorunitCbox->isEnabled()) {
     ui->vectorunitCbox->clear();
+  }
+
+  // vector scale x (scaling in x)
+  if ((nc=cp->findKey(vpcopt,PlotOptions::key_vectorscale_x))>=0) {
+    if (vpcopt[nc].floatValue.size()>0)
+      e = vpcopt[nc].floatValue[0];
+    else
+      e = 1;
+    ui->vectorscalexSbox->setEnabled(true);
+    ui->vectorscalexSbox->setValue(e);
+  } else {
+    ui->vectorscalexSbox->setEnabled(false);
+    ui->vectorscalexSbox->setValue(1);
+  }
+
+  // vector scale y (scaling in y)
+  if ((nc=cp->findKey(vpcopt,PlotOptions::key_vectorscale_y))>=0) {
+    if (vpcopt[nc].floatValue.size()>0)
+      e = vpcopt[nc].floatValue[0];
+    else
+      e = 1;
+    ui->vectorscaleySbox->setEnabled(true);
+    ui->vectorscaleySbox->setValue(e);
+  } else if (ui->vectorscaleySbox->isEnabled()) {
+    ui->vectorscaleySbox->setEnabled(false);
+    ui->vectorscaleySbox->setValue(1);
   }
 
   // vectorthickness (vector thickness relative to length)
@@ -858,7 +890,8 @@ void VcrossStyleWidget::disableFieldOptions()
   ui->densityCbox->setEnabled(false);
 
   ui->vectorunitCbox->clear();
-
+  ui->vectorscalexSbox->setEnabled(false);
+  ui->vectorscaleySbox->setEnabled(false);
   ui->vectorthicknessSpinBox->setEnabled(false);
 
 #ifndef DISABLE_EXTREMES
@@ -938,6 +971,10 @@ void VcrossStyleWidget::lineintervalCboxActivated(int index)
   // update the list (with selected value in the middle)
   float a= atof(lineintervals[index].c_str());
   lineintervals= numberList(ui->lineintervalCbox, a);
+
+  zero1ComboBoxToggled();
+  min1ComboBoxToggled();
+  max1ComboBoxToggled();
 }
 
 void VcrossStyleWidget::densityCboxActivated(int index)
@@ -954,6 +991,16 @@ void VcrossStyleWidget::vectorunitCboxActivated(int index)
   // update the list (with selected value in the middle)
   float a= atof(vectorunit[index].c_str());
   vectorunit= numberList(ui->vectorunitCbox, a);
+}
+
+void VcrossStyleWidget::vectorscalexSboxChanged(const QString& value)
+{
+  updateFieldOptions(PlotOptions::key_vectorscale_x, value.toStdString());
+}
+
+void VcrossStyleWidget::vectorscaleySboxChanged(const QString& value)
+{
+  updateFieldOptions(PlotOptions::key_vectorscale_y, value.toStdString());
 }
 
 void VcrossStyleWidget::vectorthicknessChanged(int value)
@@ -1119,20 +1166,20 @@ void VcrossStyleWidget::alphaChanged(int index)
   updateFieldOptions(PlotOptions::key_alpha, miutil::from_number(index));
 }
 
-void VcrossStyleWidget::zero1ComboBoxToggled(int index)
+void VcrossStyleWidget::zero1ComboBoxToggled()
 {
   if (!ui->zero1ComboBox->currentText().isNull()) {
     std::string str = ui->zero1ComboBox->currentText().toStdString();
     updateFieldOptions(PlotOptions::key_basevalue,str);
     float a = atof(str.c_str());
-    float b = ui->lineintervalCbox->currentText().toInt();
+    float b = ui->lineintervalCbox->currentText().toFloat();
     baseList(ui->zero1ComboBox,a,b,true);
   }
 }
 
-void VcrossStyleWidget::min1ComboBoxToggled(int index)
+void VcrossStyleWidget::min1ComboBoxToggled()
 {
-  if( index == 0 )
+  if (ui->min1ComboBox->currentIndex() == 0)
     updateFieldOptions(PlotOptions::key_minvalue,"off");
   else if(!ui->min1ComboBox->currentText().isNull() ){
     std::string str = ui->min1ComboBox->currentText().toStdString();
@@ -1145,9 +1192,9 @@ void VcrossStyleWidget::min1ComboBoxToggled(int index)
   }
 }
 
-void VcrossStyleWidget::max1ComboBoxToggled(int index)
+void VcrossStyleWidget::max1ComboBoxToggled()
 {
-  if( index == 0 )
+  if (ui->max1ComboBox->currentIndex() == 0)
     updateFieldOptions(PlotOptions::key_maxvalue,"off");
   else if(!ui->max1ComboBox->currentText().isNull() ){
     std::string str = ui->max1ComboBox->currentText().toStdString();

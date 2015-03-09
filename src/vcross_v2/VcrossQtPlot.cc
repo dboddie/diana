@@ -36,6 +36,7 @@
 #include "VcrossQtUtil.h"
 
 #include "diLinetype.h"
+#include "diPoint.h"
 
 #include <diField/diMetConstants.h>
 #include <diField/VcrossUtil.h>
@@ -90,12 +91,14 @@ static const char* horizontal(bool timegraph)
 
 bool eq_LonLat(const LonLat& a, const LonLat& b)
 {
-  return a.lon() == b.lon() && a.lat() == b.lat();
+  const float EPS = 1e-7;
+  return EPS > fabs(a.lon() - b.lon())
+      && EPS > fabs(a.lat() - b.lat());
 }
 
-const int   NFLTABLE = 16;
+const int   NFLTABLE = 14;
 const float FLTABLE[NFLTABLE] =  {
-  25, 50, 140, 180, 240, 300, 340, 390, 450, 600, 700, 800, 999
+  25, 50, 100, 140, 180, 240, 300, 340, 390, 450, 600, 700, 800, 999
 };
 
 // begin utility functions for y ticks
@@ -550,37 +553,25 @@ void QtPlot::prepareView(QPainter& painter)
 void QtPlot::prepareAxesForAspectRatio()
 {
   METLIBS_LOG_SCOPE();
-  float v2h = mOptions->verHorRatio;
-  if (isTimeGraph() or (not mOptions->keepVerHorRatio) or v2h <= 0) {
-    METLIBS_LOG_DEBUG("no aspect ratio");
-    // horizontal axis has time unit, vertical axis pressure or height; aspect ratio is meaningless
-    mAxisX->setPaintRange(mPlotAreaMax.left(),   mPlotAreaMax.right());
-    mAxisY->setPaintRange(mPlotAreaMax.bottom(), mPlotAreaMax.top());
-    return;
+  Rectangle pam(mPlotAreaMax.left(), mPlotAreaMax.top(),
+      mPlotAreaMax.right(), mPlotAreaMax.bottom());
+
+  if (!isTimeGraph() && mOptions->keepVerHorRatio && mOptions->verHorRatio > 0) {
+    float ymax = mAxisY->getValueMax(), ymin = mAxisY->getValueMin();
+    if (mAxisY->quantity() == vcross::detail::Axis::PRESSURE) {
+      // use the ICAO standard atmosphere
+      ymax = MetNo::Constants::ICAO_geo_altitude_from_pressure(ymax);
+      ymin = MetNo::Constants::ICAO_geo_altitude_from_pressure(ymin);
+    }
+    const float rangeY = std::abs(ymax-ymin);
+    if (rangeY > 0) {
+      const float rangeX = std::abs(mAxisX->getValueMax() - mAxisX->getValueMin());
+      diutil::fixAspectRatio(pam, (rangeX/rangeY)/mOptions->verHorRatio, false);
+    }
   }
 
-  const float rangeX = std::abs(mAxisX->getValueMax() - mAxisX->getValueMin());
-  float rangeY = v2h * std::abs(mAxisY->getValueMax() - mAxisY->getValueMin());
-  if (mAxisY->quantity() == vcross::detail::Axis::PRESSURE)
-    rangeY *= 10; // approximately 10m/hPa
-
-  // m/pixel on x and y axis
-  const float pmx = rangeX / mPlotAreaMax.width(), pmy = rangeY / mPlotAreaMax.height();
-  METLIBS_LOG_DEBUG(LOGVAL(pmx) << LOGVAL(pmy) << LOGVAL(rangeX) << LOGVAL(rangeY));
-
-  if (pmy > pmx) {
-    // too high for plot area, reduce width
-    const float mid = (mPlotAreaMax.left() + mPlotAreaMax.right())/2, w2 = mPlotAreaMax.width() * pmx / (pmy*2);
-    mAxisX->setPaintRange(mid - w2, mid + w2);
-    mAxisY->setPaintRange(mPlotAreaMax.bottom(), mPlotAreaMax.top());
-  } else {
-    // reduce height
-    const float mid = (mPlotAreaMax.bottom() + mPlotAreaMax.top())/2, h2 = mPlotAreaMax.height() * pmy / (pmx*2);
-    mAxisX->setPaintRange(mPlotAreaMax.left(), mPlotAreaMax.right());
-    mAxisY->setPaintRange(mid + h2, mid - h2);
-  }
-  METLIBS_LOG_DEBUG(LOGVAL(mAxisX->getPaintMin()) << LOGVAL(mAxisX->getPaintMax())
-      << LOGVAL(mAxisY->getPaintMin()) << LOGVAL(mAxisY->getPaintMax()));
+  mAxisX->setPaintRange(pam.x1, pam.x2);
+  mAxisY->setPaintRange(pam.y2, pam.y1);
 }
 
 void QtPlot::computeMaxPlotArea(QPainter& painter)
@@ -973,14 +964,14 @@ void QtPlot::generateYTicks(ticks_t& tickValues, tick_to_axis_f& tta)
     if (mAxisY->label() == "m") {
       const int nzsteps = 12;
       const float zsteps[nzsteps] =
-          { 10., 500., 1000., 2500., 5000., 10000, 15000,
+          { 100., 500., 1000., 2500., 5000., 10000, 15000,
             20000, 25000, 30000, 35000, 40000 };
       tickValues = ticks_table(zsteps, nzsteps);
       autotick_offset = 100;
     } else if (mAxisY->label() == "Ft") {
-      const int nftsteps = 10;
+      const int nftsteps = 11;
       const float ftsteps[nftsteps] =
-          { 1500, 3000, 8000, 15000, 30000, 50000, 60000,
+          { 100, 1500, 3000, 8000, 15000, 30000, 50000, 60000,
             70000, 80000, 90000 };
       tickValues = ticks_table(ftsteps, nftsteps);
       tta = foot_to_meter;
