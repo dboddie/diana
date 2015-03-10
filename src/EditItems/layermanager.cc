@@ -181,7 +181,6 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QList<QSharedP
                                                             const QString &fileName)
 {
   QSharedPointer<LayerGroup> layerGroup = createNewLayerGroup(name, fileName);
-  layerGroups_.append(layerGroup);
   addToLayerGroup(layerGroup, layers);
   return layerGroup;
 }
@@ -204,11 +203,12 @@ QSharedPointer<LayerGroup> LayerManager::addToNewLayerGroup(const QSharedPointer
   return layerGroup;
 }
 
-QSharedPointer<LayerGroup> LayerManager::createNewLayerGroup(const QString &name, const QString &fileName) const
+QSharedPointer<LayerGroup> LayerManager::createNewLayerGroup(const QString &name, const QString &fileName)
 {
   QSharedPointer<LayerGroup> layerGroup(new LayerGroup(name.isEmpty() ? "new layer group" : name));
   layerGroup->setFileName(fileName);
   ensureUniqueLayerGroupName(layerGroup);
+  layerGroups_.append(layerGroup);
   return layerGroup;
 }
 

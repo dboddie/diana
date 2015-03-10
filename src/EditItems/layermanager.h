@@ -69,7 +69,7 @@ public:
     const QString &fileName = QString());
   QSharedPointer<LayerGroup> addToNewLayerGroup(const QSharedPointer<Layer> &, const QString & = QString());
   QSharedPointer<LayerGroup> addToNewLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QString &source);
-  QSharedPointer<LayerGroup> createNewLayerGroup(const QString &name, const QString &fileName = QString()) const;
+  QSharedPointer<LayerGroup> createNewLayerGroup(const QString &name, const QString &fileName = QString());
   QSharedPointer<Layer> createNewLayer(const QString & = QString(), bool = true, bool = true) const;
   QSharedPointer<Layer> createNewLayer(const QSharedPointer<LayerGroup> &, const QString & = QString(), bool = true, bool = true);
   QSharedPointer<Layer> createDuplicateLayer(const QList<QSharedPointer<Layer> > &, const DrawingManager *) const;

@@ -48,6 +48,7 @@ LayerGroup::LayerGroup(const LayerGroup &other)
   , name_(other.name_)
   , editable_(other.editable_)
   , active_(other.active_)
+  , tfiles_(other.tfiles_)
 {
   foreach (const QSharedPointer<Layer> &layer, other.layers_)
     layers_.append(QSharedPointer<Layer>(new Layer(*(layer.data()))));
