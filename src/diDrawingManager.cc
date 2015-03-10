@@ -425,19 +425,6 @@ std::vector<miutil::miTime> DrawingManager::getTimes() const
  * is also updated with the time obtained from the property, if found.
 */
 
-std::string DrawingManager::timeProperty(const QVariantMap &properties, std::string &time_str) const
-{
-  static const char* timeProps[2] = {"time", "TimeSpan:begin"};
-
-  for (unsigned int i = 0; i < 2; ++i) {
-    time_str = properties.value(timeProps[i]).toString().toStdString();
-    if (!time_str.empty())
-      return timeProps[i];
-  }
-
-  return std::string();
-}
-
 /**
  * Prepares the manager for display of, and interaction with, items that
  * correspond to the given \a time.
@@ -457,24 +444,13 @@ bool DrawingManager::prepare(const miutil::miTime &time)
     }
   }
 
-  // Change the visibility of items.
-  const QList<QSharedPointer<EditItems::Layer> > &layers = layerMgr_->orderedLayers();
-  for (int i = layers.size() - 1; i >= 0; --i) {
+  // Update layer groups to change the visibility of items.
+  QString timeStr = QString::fromStdString(time.isoTime());
+  QDateTime dateTime = QDateTime::fromString(timeStr, Qt::ISODate);
 
-    const QSharedPointer<EditItems::Layer> layer = layers.at(i);
-    QList<QSharedPointer<DrawingItemBase> > items = layer->items();
-
-    foreach (const QSharedPointer<DrawingItemBase> item, items) {
-      std::string time_str;
-      std::string time_prop = timeProperty(item->propertiesRef(), time_str);
-      if (time_prop.empty())
-        item->setProperty("visible", true);
-      else {
-        bool visible = (time_str.empty() | ((time.isoTime("T") + "Z") == time_str));
-        item->setProperty("visible", visible);
-      }
-    }
-  }
+  const QList<QSharedPointer<EditItems::LayerGroup> > &layerGroups = layerMgr_->layerGroups();
+  for (int i = 0; i < layerGroups.size(); ++i)
+    layerGroups.at(i)->setTime(dateTime);
 
   return found;
 }

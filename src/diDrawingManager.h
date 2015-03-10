@@ -139,7 +139,6 @@ protected:
   virtual void addItem_(const QSharedPointer<DrawingItemBase> &);
   virtual void removeItem_(const QSharedPointer<DrawingItemBase> &);
   void applyPlotOptions(const QSharedPointer<DrawingItemBase> &) const;
-  std::string timeProperty(const QVariantMap &properties, std::string &time_str) const;
 
   static Rectangle editRect_;
 

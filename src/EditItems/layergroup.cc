@@ -153,6 +153,57 @@ QSet<QString> LayerGroup::getTimes() const
   return times;
 }
 
+void LayerGroup::setTime(const QDateTime &dateTime)
+{
+  // Update the visibility of items held in the layers of this group.
+  QString dateTimeStr = dateTime.toString(Qt::ISODate) + "Z";
+
+  for (int i = 0; i < layers_.size(); ++i) {
+
+    const QSharedPointer<EditItems::Layer> layer = layers_.at(i);
+    QList<QSharedPointer<DrawingItemBase> > items = layer->items();
+
+    foreach (const QSharedPointer<DrawingItemBase> item, items) {
+      QString time_str;
+      QString time_prop = timeProperty(item->propertiesRef(), time_str);
+
+      if (time_prop.isEmpty()) {
+        // If no time property was found, make the item visible.
+        item->setProperty("visible", true);
+      } else {
+        // Make the item visible if the time is empty or equal to the current time.
+        bool visible = (time_str.isEmpty() | (dateTimeStr == time_str));
+        item->setProperty("visible", visible);
+      }
+    }
+  }
+
+  if (tfiles_.isEmpty())
+    return;
+
+  if (tfiles_.contains(dateTime)) {
+    QFileInfo info = tfiles_.value(dateTime);
+    setFileName(info.filePath());
+  }
+}
+
+/**
+ * Returns the property name used to hold the time of an item in its properties map,
+ * modifying the time_str string to return the time itself.
+ */
+QString LayerGroup::timeProperty(const QVariantMap &properties, QString &time_str)
+{
+  static const char* timeProps[2] = {"time", "TimeSpan:begin"};
+
+  for (unsigned int i = 0; i < 2; ++i) {
+    time_str = properties.value(timeProps[i]).toString();
+    if (!time_str.isEmpty())
+      return QString(timeProps[i]);
+  }
+
+  return QString();
+}
+
 QSet<QString> LayerGroup::files() const
 {
   // If the layer does not contain a collection of files, return the single

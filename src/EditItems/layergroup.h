@@ -42,6 +42,7 @@
 #include <QString>
 //#define QT_SHAREDPOINTER_TRACK_POINTERS
 #include <QSharedPointer>
+#include <QVariantMap>
 
 namespace EditItems {
 
@@ -66,10 +67,13 @@ public:
   const QList<QSharedPointer<Layer> > &layersRef() const;
   QList<QSharedPointer<Layer> > &layersRef();
   QSet<QString> getTimes() const;
+  void setTime(const QDateTime &dateTime);
   QSet<QString> files() const;
   void setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles);
 
 private:
+  QString timeProperty(const QVariantMap &properties, QString &time_str);
+
   int id_;
   static int nextId_;
   static int nextId();
