@@ -1721,7 +1721,7 @@ void ObsPlot::plot(PlotOrder zorder)
 {
   METLIBS_LOG_SCOPE();
 
-  if (zorder != LINES)
+  if (zorder != LINES && zorder != OVERLAY)
     return;
 
   if (!isEnabled()) {
@@ -2828,9 +2828,9 @@ void ObsPlot::plotDBMetar(int index)
   if (pFlag.count("wind") && dta.fdata.count("dd") && dta.fdata.count("ff")) {
     checkColourCriteria("dd", dta.fdata["dd"]);
     checkColourCriteria("ff", dta.fdata["ff"]);
-    metarWind((int) dta.fdata["dd"], diutil::ms2knots(dta.fdata["ff"]), radius, lpos);
+    metarWind((int) dta.fdata["dd_adjusted"], diutil::ms2knots(dta.fdata["ff"]), radius,
+        lpos);
   }
-
   //limit of variable wind direction
   int dndx = 16;
   if (dndndn_value!= undef && dxdxdx_value != undef) {
@@ -3296,19 +3296,20 @@ void ObsPlot::plotDBSynop(int index)
 
   //wind - dd,ff
   if (pFlag.count("wind") && dta.fdata.count("dd") && dta.fdata.count("ff")
-      && dta.fdata["dd"] != undef) {
+      && dta.fdata.count("dd_adjusted") && dta.fdata["dd"] != undef) {
     bool ddvar = false;
     int dd = (int) dta.fdata["dd"];
+    int dd_adjusted = (int) dta.fdata["dd_adjusted"];
     if (dd == 990 || dd == 510) {
       ddvar = true;
-      dd = 270;
+      dd_adjusted = 270;
     }
     if (diutil::ms2knots(dta.fdata["ff"]) < 1.)
       dd = 0;
     lpos = itab[(dd / 10 + 3) / 2] + 10;
     checkColourCriteria("dd", dd);
     checkColourCriteria("ff", dta.fdata["ff"]);
-    plotWind(dd, dta.fdata["ff"], ddvar, radius);
+    plotWind(dd_adjusted, dta.fdata["ff"], ddvar, radius);
   } else
     lpos = itab[1] + 10;
 
@@ -3743,19 +3744,20 @@ void ObsPlot::plotSynop(int index)
 
   //wind - dd,ff
   if (pFlag.count("wind") && dta.fdata.count("dd") && dta.fdata.count("ff")
-      && dta.fdata["dd"] != undef) {
+      && dta.fdata.count("dd_adjusted") && dta.fdata["dd"] != undef) {
     bool ddvar = false;
     int dd = (int) dta.fdata["dd"];
+    int dd_adjusted = (int) dta.fdata["dd_adjusted"];
     if (dd == 990 || dd == 510) {
       ddvar = true;
-      dd = 270;
+      dd_adjusted = 270;
     }
     if (diutil::ms2knots(dta.fdata["ff"]) < 1.)
       dd = 0;
     lpos = itab[(dd / 10 + 3) / 2] + 10;
     checkColourCriteria("dd", dd);
     checkColourCriteria("ff", dta.fdata["ff"]);
-    plotWind(dd, dta.fdata["ff"], ddvar, radius);
+    plotWind(dd_adjusted, dta.fdata["ff"], ddvar, radius);
   } else
     lpos = itab[1] + 10;
 
@@ -4132,7 +4134,7 @@ void ObsPlot::plotMetar(int index)
   if (pFlag.count("wind") && dta.fdata.count("dd") && dta.fdata.count("ff")) {
     checkColourCriteria("dd", dta.fdata["dd"]);
     checkColourCriteria("ff", dta.fdata["ff"]);
-    metarWind((int) dta.fdata["dd"], diutil::ms2knots(dta.fdata["ff"]), radius,
+    metarWind((int) dta.fdata["dd_adjusted"], diutil::ms2knots(dta.fdata["ff"]), radius,
         lpos);
   }
 
