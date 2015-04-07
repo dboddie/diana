@@ -128,7 +128,7 @@ public:
 
   void setEditRect(Rectangle r);
 
-  std::vector<PlotElement> getPlotElements(bool = true) const;
+  virtual std::vector<PlotElement> getPlotElements() const;
   virtual QString plotElementTag() const;
   void enablePlotElement(const PlotElement &);
 
@@ -140,6 +140,7 @@ public slots:
 
 signals:
   void itemsClicked(const QList<QSharedPointer<DrawingItemBase> > &items);
+  void itemsHovered(const QList<QSharedPointer<DrawingItemBase> > &items);
 
 protected:
   virtual void addItem_(const QSharedPointer<DrawingItemBase> &);

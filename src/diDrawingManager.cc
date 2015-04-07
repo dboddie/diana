@@ -583,13 +583,13 @@ void DrawingManager::setEditRect(Rectangle r)
   DrawingManager::editRect_ = Rectangle(r.x1, r.y1, r.x2, r.y2);
 }
 
-std::vector<PlotElement> DrawingManager::getPlotElements(bool nonEmptyOnly) const
+std::vector<PlotElement> DrawingManager::getPlotElements() const
 {
   std::vector<PlotElement> pel;
   plotElems_.clear();
   int i = 0;
   foreach (const QSharedPointer<EditItems::Layer> &layer, layerMgr_->orderedLayers()) {
-    if ((!nonEmptyOnly) || (!layer->isEmpty())) {
+    if (!layer->isEmpty()) {
       pel.push_back(
             PlotElement(
               plotElementTag().toStdString(), QString("%1").arg(i).toStdString(),
@@ -629,13 +629,13 @@ void DrawingManager::enablePlotElement(const PlotElement &pe)
  */
 void DrawingManager::sendMouseEvent(QMouseEvent* event, EventResult& res)
 {
-  if (event->type() != QEvent::MouseButtonPress || event->buttons() != Qt::LeftButton)
+  if (event->type() != QEvent::MouseMove || event->buttons() != Qt::NoButton)
     return;
 
   // Find a list of items at the point passed in the event.
   QList<QSharedPointer<DrawingItemBase> > hit = findHitItems(event->pos(), 0);
   if (hit.size() > 0) {
-    emit itemsClicked(hit);
+    emit itemsHovered(hit);
     event->setAccepted(true);
   }
 }
