@@ -29,9 +29,13 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <EditItems/layergroup.h>
+#include <EditItems/kml.h>
 #include <EditItems/layer.h>
+#include <EditItems/layergroup.h>
 #include <EditItems/timefilesextractor.h>
+
+#define MILOGGER_CATEGORY "diana.LayerGroup"
+#include <miLogger/miLogging.h>
 
 namespace EditItems {
 
@@ -80,9 +84,12 @@ void LayerGroup::setName(const QString &n)
   name_ = n;
 }
 
-QString LayerGroup::fileName() const
+QString LayerGroup::fileName(const QDateTime &dateTime) const
 {
-  return fileName_;
+  if (dateTime.isNull())
+    return fileName_;
+  else
+    return tfiles_.value(dateTime).filePath();
 }
 
 void LayerGroup::setFileName(const QString &filePathOrPattern)
@@ -153,7 +160,17 @@ QSet<QString> LayerGroup::getTimes() const
   return times;
 }
 
-void LayerGroup::setTime(const QDateTime &dateTime)
+QDateTime LayerGroup::time() const
+{
+  return currentTime_;
+}
+
+bool LayerGroup::hasTime(const QDateTime &dateTime) const
+{
+  return tfiles_.contains(dateTime);
+}
+
+void LayerGroup::setTime(const QDateTime &dateTime, bool allVisible)
 {
   // Update the visibility of items held in the layers of this group.
   QString dateTimeStr = dateTime.toString(Qt::ISODate) + "Z";
@@ -168,8 +185,15 @@ void LayerGroup::setTime(const QDateTime &dateTime)
       QString time_prop = timeProperty(item->propertiesRef(), time_str);
 
       if (time_prop.isEmpty()) {
-        // If no time property was found, make the item visible.
-        item->setProperty("visible", true);
+        if (isCollection()) {
+          // For layer groups containing a collection of files, make the layers
+          // visible only if the current file is appropriate for the new time.
+          item->setProperty("visible", allVisible);
+        } else {
+          // For layer groups containing a single file with its own times for
+          // layers, if no time property was found, make the item visible.
+          item->setProperty("visible", true);
+        }
       } else {
         // Make the item visible if the time is empty or equal to the current time.
         bool visible = (time_str.isEmpty() | (dateTimeStr == time_str));
@@ -178,13 +202,7 @@ void LayerGroup::setTime(const QDateTime &dateTime)
     }
   }
 
-  if (tfiles_.isEmpty())
-    return;
-
-  if (tfiles_.contains(dateTime)) {
-    QFileInfo info = tfiles_.value(dateTime);
-    setFileName(info.filePath());
-  }
+  currentTime_ = dateTime;
 }
 
 /**
@@ -225,6 +243,11 @@ void LayerGroup::setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles)
 {
   for (int i = 0; i < tfiles.size(); ++i)
     tfiles_[tfiles.at(i).second] = tfiles.at(i).first;
+}
+
+bool LayerGroup::isCollection() const
+{
+  return !tfiles_.isEmpty();
 }
 
 } // namespace

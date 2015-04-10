@@ -47,6 +47,7 @@
 namespace EditItems {
 
 class Layer;
+class LayerManager;
 
 class LayerGroup : public QObject
 {
@@ -59,7 +60,7 @@ public:
   int id() const;
   QString name() const;
   void setName(const QString &);
-  QString fileName() const;
+  QString fileName(const QDateTime &dateTime = QDateTime()) const;
   void setFileName(const QString &);
   bool isEditable() const;
   bool isActive() const;
@@ -67,9 +68,12 @@ public:
   const QList<QSharedPointer<Layer> > &layersRef() const;
   QList<QSharedPointer<Layer> > &layersRef();
   QSet<QString> getTimes() const;
-  void setTime(const QDateTime &dateTime);
+  QDateTime time() const;
+  bool hasTime(const QDateTime &dateTime) const;
+  void setTime(const QDateTime &dateTime, bool allVisible = true);
   QSet<QString> files() const;
   void setFiles(const QList<QPair<QFileInfo, QDateTime> > &tfiles);
+  bool isCollection() const;
 
 private:
   QString timeProperty(const QVariantMap &properties, QString &time_str);
@@ -83,6 +87,7 @@ private:
   bool active_;
   QList<QSharedPointer<Layer> > layers_;
   QMap<QDateTime, QFileInfo> tfiles_;
+  QDateTime currentTime_;
 };
 
 } // namespace

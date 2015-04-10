@@ -153,7 +153,6 @@ bool LayerManager::deselectAllItems(bool notify)
   return cleared;
 }
 
-
 void LayerManager::addToLayerGroup(const QSharedPointer<LayerGroup> &layerGroup, const QList<QSharedPointer<Layer> > &layers)
 {
   foreach(const QSharedPointer<Layer> &layer, layers) {
@@ -334,8 +333,9 @@ void LayerManager::removeLayer(const QSharedPointer<Layer> &layer)
            layer->name().toLatin1().data(),
            layerGroup->name().toLatin1().data());
 
-  layerGroup->layers_.removeOne(layer);
+  // The order of removal appears to matter here.
   orderedLayers_.removeOne(layer);
+  layerGroup->layers_.removeOne(layer);
 }
 
 // Moves \a srcLayer to the other side of \a dstLayer.
@@ -466,6 +466,43 @@ QSet<QSharedPointer<DrawingItemBase> > LayerManager::allItems() const
     items.unite(orderedLayers_.at(i)->items().toSet());
 
   return items;
+}
+
+void LayerManager::setTime(const QDateTime &dateTime)
+{
+  foreach (QSharedPointer<LayerGroup> layerGroup, layerGroups_) {
+
+    bool allVisible = true;
+
+    if (layerGroup->isCollection()) {
+
+      // For layer groups containing a collection of files, make the layers
+      // visible only if the current file is appropriate for the new time.
+      allVisible = (dateTime == layerGroup->time());
+
+      if (!allVisible && layerGroup->hasTime(dateTime)) {
+
+        // Another time was requested and is available. Discard the existing
+        // layers and load the ones from the corresponding file.
+        QList<QSharedPointer<Layer> > &layers = layerGroup->layersRef();
+        while (!layers.isEmpty())
+          removeLayer(layers.first());
+
+        QString fileName = layerGroup->fileName(dateTime);
+
+        QString error;
+        QList<QSharedPointer<Layer> > newLayers = KML::createFromFile(this, fileName, &error);
+        if (!error.isEmpty())
+          METLIBS_LOG_WARN(QString("LayerManager::addToNewLayerGroup: failed to load layer group from %1: %2")
+                           .arg(fileName).arg(error).toStdString());
+
+        addToLayerGroup(layerGroup, newLayers);
+        allVisible = true;
+      }
+    }
+
+    layerGroup->setTime(dateTime, allVisible);
+  }
 }
 
 } // namespace

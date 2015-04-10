@@ -105,6 +105,7 @@ public:
   void ensureUniqueLayerName(const QSharedPointer<Layer> &) const;
 
   QSet<QSharedPointer<DrawingItemBase> > allItems() const;
+  void setTime(const QDateTime &dateTime);
 
 private:
   QList<QSharedPointer<LayerGroup> > layerGroups_;

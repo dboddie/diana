@@ -449,9 +449,7 @@ bool DrawingManager::prepare(const miutil::miTime &time)
   QString timeStr = QString::fromStdString(time.isoTime());
   QDateTime dateTime = QDateTime::fromString(timeStr, Qt::ISODate);
 
-  const QList<QSharedPointer<EditItems::LayerGroup> > &layerGroups = layerMgr_->layerGroups();
-  for (int i = 0; i < layerGroups.size(); ++i)
-    layerGroups.at(i)->setTime(dateTime);
+  layerMgr_->setTime(dateTime);
 
   return found;
 }
